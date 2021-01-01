@@ -1,13 +1,25 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class TodoView extends StatelessWidget {
+class TodoView extends StatefulWidget {
   final String title;
   final List<DateTime> entries;
   final List<String> labels;
   final List<String> comments;
 
-  TodoView(this.title, this.entries, this.labels,this.comments);
+  TodoView(this.title, this.entries, this.labels, this.comments) {}
+
+  @override
+  _TodoViewState createState() => _TodoViewState();
+}
+
+class _TodoViewState extends State<TodoView> {
+  List<bool> expandedTiles;
+
+  @override
+  void initState() {
+    expandedTiles = new List.generate(widget.entries.length, (index) => false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +29,7 @@ class TodoView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-                margin: EdgeInsets.all(10),
-                child: Text(title)),
+            Container(margin: EdgeInsets.all(10), child: Text(widget.title)),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -38,23 +48,32 @@ class TodoView extends StatelessWidget {
                             margin: EdgeInsets.all(0),
                             child: Center(
                                 child: ListView.separated(
-                                  
                                     separatorBuilder: (context, index) =>
                                         Divider(),
-                                    itemCount: entries.length,
+                                    itemCount: widget.entries.length,
                                     itemBuilder: (_, index) {
                                       return ExpansionTile(
-                                        subtitle: SizedBox(
-                                          width:40.0,
-                                          child: Text(
-
-                                              comments[index],
-                                          overflow: TextOverflow.ellipsis),
-                                        ),
-                                        children: [Text(comments[index])],
+                                          onExpansionChanged: (expanded) {
+                                            setState(() {
+                                              this.expandedTiles[index] =
+                                                  expanded;
+                                            });
+                                          },
+                                          subtitle: this.expandedTiles[index]
+                                              ? null
+                                              : SizedBox(
+                                                  width: 40.0,
+                                                  child: Text(
+                                                      widget.comments[index],
+                                                      overflow: TextOverflow
+                                                          .ellipsis),
+                                                ),
+                                          children: [
+                                            Text(widget.comments[index])
+                                          ],
                                           leading: Text(index.toString()),
-                                          title:
-                                              Text(entries[index].toString()));
+                                          title: Text(widget.entries[index]
+                                              .toString()));
                                     }))))
                   ],
                 ),
@@ -62,7 +81,9 @@ class TodoView extends StatelessWidget {
             ),
             Row(
               children: [
-                ...labels.map((e) => Container(child: new Text(e))).toList()
+                ...widget.labels
+                    .map((e) => Container(child: new Text(e)))
+                    .toList()
               ],
             )
           ],

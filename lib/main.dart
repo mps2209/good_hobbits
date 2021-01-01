@@ -25,6 +25,7 @@ class _MyAppState extends State<MyApp> {
     try {
       // Wait for Firebase to initialize and set `_initialized` state to true
       await Firebase.initializeApp();
+
       setState(() {
         _initialized = true;
       });
