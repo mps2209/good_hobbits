@@ -81,7 +81,9 @@ class _TodoListState extends State<TodoList> {
                                   e.data().containsKey('labels')?e['labels']:[''],
                                   snapshot.data.docs.map((entry) =>
                                     entry.data().containsKey('comment')?entry['comment'].toString():''
-                                  ).toList()
+                                  ).toList(),snapshot.data.docs.map((entry) =>
+                              entry.data().containsKey('image')?entry['image'].toString():''
+                              ).toList()
                               ),
                             ),
                             trailing: snapshot.hasError
@@ -96,9 +98,9 @@ class _TodoListState extends State<TodoList> {
         });
   }
 
-  void openHobbit(String title, List<DateTime> entries, List<String> labels, List<String> comments) {
+  void openHobbit(String title, List<DateTime> entries, List<String> labels, List<String> comments,List<String> downloadUrls) {
     Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => TodoView(title, entries, labels, comments)
+        builder: (context) => TodoView(title, entries, labels, comments,downloadUrls)
     )
     );
   }

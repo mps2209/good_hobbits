@@ -1,8 +1,11 @@
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:ui';
+import 'package:image_picker/image_picker.dart';
 
 class AddTodo extends StatefulWidget {
   @override
@@ -16,13 +19,21 @@ class _AddTodoState extends State<AddTodo> {
   FirebaseAuth auth = FirebaseAuth.instance;
   TextEditingController todoController = new TextEditingController();
   TextEditingController commentController = new TextEditingController();
-
+  firebase_storage.FirebaseStorage storage =
+      firebase_storage.FirebaseStorage.instance;
   CollectionReference todoCollection;
   AddingTodo success = AddingTodo.SUCCESS;
   var query = (DocumentSnapshot ds) => ds.id.contains('');
   String text = '';
   bool hasFocus;
   FocusNode titleFocusNode;
+
+  File _imageFile;
+  String uploadurl;
+  bool isUploading=false;
+  ///NOTE: Only supported on Android & iOS
+  ///Needs image_picker plugin {https://pub.dev/packages/image_picker}
+  final picker = ImagePicker();
 
   @override
   void dispose() {
@@ -46,6 +57,27 @@ class _AddTodoState extends State<AddTodo> {
     titleFocusNode = new FocusNode();
   }
 
+  Future<void> uploadImage() async {
+    String filePath = _imageFile.path;
+    try {
+      setState(() {
+        isUploading=true;
+      });
+      await firebase_storage.FirebaseStorage.instance
+          .ref(baseName(_imageFile.path))
+          .putFile(_imageFile);
+      uploadurl=baseName(_imageFile.path);
+      setState(() {
+        isUploading=true;
+      });
+    } catch (e) {
+      setState(() {
+        isUploading=false;
+      });
+      // e.g, e.code == 'canceled'
+    }
+  }
+
   void updateQuery() {
     setState(() {
       text = todoController.text;
@@ -54,9 +86,30 @@ class _AddTodoState extends State<AddTodo> {
     });
   }
 
+  Future pickImage() async {
+    final pickedFile = await picker.getImage(source: ImageSource.camera);
+
+    setState(() {
+      _imageFile = File(pickedFile.path);
+    });
+
+  }
+
+  String baseName(String path) {
+    return auth.currentUser.uid + '/' + path;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: pickImage,
+        tooltip: 'Pick Image',
+        child: Icon(Icons.add_a_photo),
+      ),
+      appBar: AppBar(
+        title: Text('Add Hobbit'),
+      ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 10.0),
         child: Column(
@@ -87,10 +140,9 @@ class _AddTodoState extends State<AddTodo> {
                   Container(
                     margin: EdgeInsets.all(8.0),
                     padding: EdgeInsets.only(bottom: 50),
-
                     child: TextField(
                       keyboardType: TextInputType.multiline,
-                      maxLines:99,
+                      maxLines: 99,
                       decoration: InputDecoration(
                         labelText: 'Comment',
                         border: OutlineInputBorder(),
@@ -103,29 +155,35 @@ class _AddTodoState extends State<AddTodo> {
                           stream: todoCollection.snapshots(),
                           builder: (BuildContext context,
                               AsyncSnapshot<QuerySnapshot> snapshot) {
-                            if (text == '' || snapshot.data.docs.where(query).length < 1) {
+                            if (text == '' ||
+                                snapshot.data.docs.where(query).length < 1) {
                               return Container();
                             } else {
                               return Container(
                                 color: Colors.white,
-
-                                child:
-                                ListView.separated(
-
+                                child: ListView.separated(
                                     separatorBuilder: (context, index) =>
                                         Divider(),
-                                    itemCount: snapshot.data.docs.where(query).length,
+                                    itemCount:
+                                        snapshot.data.docs.where(query).length,
                                     itemBuilder: (_, index) {
                                       return ListTile(
                                         title: FlatButton(
                                           color: Colors.white,
                                           onPressed: () {
-                                            todoController.text = snapshot.data.docs.where(query).toList()[index].id;
+                                            todoController.text = snapshot
+                                                .data.docs
+                                                .where(query)
+                                                .toList()[index]
+                                                .id;
                                           },
-                                          child: Text(snapshot.data.docs.where(query).toList()[index].id),
+                                          child: Text(snapshot.data.docs
+                                              .where(query)
+                                              .toList()[index]
+                                              .id),
                                         ),
                                       );
-                            }                  ),
+                                    }),
                               );
                             }
                           })
@@ -133,9 +191,12 @@ class _AddTodoState extends State<AddTodo> {
                 ],
               ),
             ),
+            _imageFile != null
+                ? Expanded(child: Image.file(_imageFile))
+                : Container(),
             RaisedButton(
               onPressed:
-                  this.todoController.text.length < 1 ? null : () => addTodo(),
+                  this.todoController.text.length < 1 || isUploading? null : () => addTodo(),
               child: Text(
                 'Add Hobbit',
                 style: TextStyle(color: Colors.white),
@@ -154,17 +215,23 @@ class _AddTodoState extends State<AddTodo> {
     this.titleFocusNode.unfocus();
   }
 
-  addTodo() {
+  addTodo() async {
     setState(() {
       success = AddingTodo.LOADING;
     });
+    if(_imageFile!=null){
+      await uploadImage();
+    }
     this
         .todoCollection
         .doc(todoController.text)
         .set({'title': todoController.text}).then((e) {
       this.todoCollection.doc(todoController.text).collection('entries').add({
         'date': DateTime.now(),
-        'comment': this.commentController.text.length>0?this.commentController.text:''
+        'comment': this.commentController.text.length > 0
+            ? this.commentController.text
+            : '',
+        'image': this.uploadurl!=null?uploadurl:''
       }).then((value) {
         setState(() {
           success = AddingTodo.SUCCESS;
