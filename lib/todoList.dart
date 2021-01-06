@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:good_hobbits/todo_view.dart';
 
 import 'add_todo.dart';
+import 'model/hobbit_model.dart';
 
 class TodoList extends StatefulWidget {
   @override
@@ -46,63 +47,55 @@ class _TodoListState extends State<TodoList> {
         ],
       )),
       body: Container(
-        child: filteredList(),
+        child: todoList(),
       ),
     );
   }
 
-  Widget filteredList() {
+  Widget todoList() {
     return StreamBuilder<QuerySnapshot>(
         stream: todoCollection.snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.data == null) {
+            return CircularProgressIndicator();
+          }
           if (snapshot.hasError) {
             return Text('Something went wrong');
           }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return CircularProgressIndicator();
           }
-
-          return ListView(
-              children: snapshot.data.docs
-                  .map((QueryDocumentSnapshot e) => StreamBuilder<QuerySnapshot>(
-                      stream: e.reference.collection('entries').snapshots(),
-                      builder: (BuildContext context,
-                          AsyncSnapshot<QuerySnapshot> snapshot) {
-                        return ListTile(
-                            title: FlatButton(
-                              child: Text(e.id),
-                              onPressed: () => openHobbit(
-                                  e.id,
-                                  snapshot.data.docs.map((entry) {
-                                    Timestamp ts = entry['date'];
-                                    return DateTime.fromMillisecondsSinceEpoch(
-                                        ts.millisecondsSinceEpoch);
-                                  }).toList(),
-                                  e.data().containsKey('labels')?e['labels']:[''],
-                                  snapshot.data.docs.map((entry) =>
-                                    entry.data().containsKey('comment')?entry['comment'].toString():''
-                                  ).toList(),snapshot.data.docs.map((entry) =>
-                              entry.data().containsKey('image')?entry['image'].toString():''
-                              ).toList()
-                              ),
-                            ),
-                            trailing: snapshot.hasError
-                                ? Text('Something went wrong')
-                                : snapshot.connectionState ==
-                                        ConnectionState.waiting
-                                    ? CircularProgressIndicator()
-                                    : Text(
-                                        snapshot.data.docs.length.toString()));
-                      }))
-                  .toList());
+          if (snapshot.hasData) {
+            return buildList(
+                snapshot.data.docs.map((e) => Hobbit.fromSnapshot(e)).toList());
+          }
+          return CircularProgressIndicator();
         });
   }
 
-  void openHobbit(String title, List<DateTime> entries, List<String> labels, List<String> comments,List<String> downloadUrls) {
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => TodoView(title, entries, labels, comments,downloadUrls)
-    )
-    );
+  Widget buildList(List<Hobbit> hobbits) {
+    return ListView(
+        children: hobbits
+            .map((Hobbit hobbit) => ListTile(
+                title: FlatButton(
+                  child: Text(hobbit.title),
+                  onPressed: () => openHobbit(hobbit),
+                ),
+                trailing: FutureBuilder(
+                    future: hobbit.entries,
+                    builder:
+                        (context, AsyncSnapshot<List<HobbitEntry>> snapshot) {
+                      if (snapshot.hasData) {
+                        return Text(snapshot.data.length.toString());
+                      } else
+                        return CircularProgressIndicator();
+                    })))
+            .toList());
+  }
+
+  void openHobbit(Hobbit hobbit) {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => TodoView(hobbit)));
   }
 
   void addTodo() {
