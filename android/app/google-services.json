@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "701985763098",
+    "firebase_url": "https://goodhobbits-f8f3e.firebaseio.com",
+    "project_id": "goodhobbits-f8f3e",
+    "storage_bucket": "goodhobbits-f8f3e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:701985763098:android:993a26a1d171e7b73bc6a3",
+        "android_client_info": {
+          "package_name": "de.manster.good_hobbits"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "701985763098-d3a8hp591aeh5gaskfceo6j0lt6of2p9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAb2TldEsFmY-MWlTUdFIvrPy6WxOGxRO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "701985763098-d3a8hp591aeh5gaskfceo6j0lt6of2p9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

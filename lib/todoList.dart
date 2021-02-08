@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:good_hobbits/todo_view.dart';
+import 'package:good_hobbits/util/MyAppBar.dart';
 
 import 'add_todo.dart';
 import 'model/hobbit_model.dart';
@@ -40,7 +41,7 @@ class _TodoListState extends State<TodoList> {
         onPressed: addTodo,
         child: Icon(Icons.add, color: Colors.white),
       ),
-      appBar: AppBar(
+      appBar: MyAppBar(
           title: Column(
         children: [
           Text('Todo List'),
@@ -87,8 +88,11 @@ class _TodoListState extends State<TodoList> {
                         (context, AsyncSnapshot<List<HobbitEntry>> snapshot) {
                       if (snapshot.hasData) {
                         return Text(snapshot.data.length.toString());
-                      } else
+                      } else if (snapshot.hasError) {
+                        return Container(child: Icon(Icons.error));
+                      } else {
                         return CircularProgressIndicator();
+                      }
                     })))
             .toList());
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:good_hobbits/login_page.dart';
 import 'package:good_hobbits/todoList.dart';
+import 'package:good_hobbits/util/MyAppBar.dart';
 import 'package:good_hobbits/util/error_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -111,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
+      appBar: MyAppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:good_hobbits/util/MyAppBar.dart';
 import 'dart:ui';
 import 'package:image_picker/image_picker.dart';
 
@@ -107,7 +108,7 @@ class _AddTodoState extends State<AddTodo> {
         tooltip: 'Pick Image',
         child: Icon(Icons.add_a_photo),
       ),
-      appBar: AppBar(
+      appBar: MyAppBar(
         title: Text('Add Hobbit'),
       ),
       body: Padding(

@@ -9,9 +9,11 @@ class Hobbit {
     this.title = snapshot.id;
     //TODO: this will probably not work due to collection need to find async way to do that
     this.doc=snapshot.reference;
-    this.entries= doc.collection('entries').snapshots().map((snapshot) => HobbitEntry.fromSnapshot(snapshot)).toList();
+    this.entries= doc.collection('entries').get().then(
+            (value) => value.docs.map(
+                    (doc)=>HobbitEntry.fromSnapshot(doc)).toList());
+        //.map((snapshot) => HobbitEntry.fromSnapshot(snapshot)).toList();
     entries.asStream().map((entries)=>entries.sort((a, b) {
-
       return a.date.millisecondsSinceEpoch -
           b.date.millisecondsSinceEpoch;
     }));
