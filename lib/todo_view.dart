@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:good_hobbits/model/hobbit_model.dart';
 import 'package:good_hobbits/util/MyAppBar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -159,10 +160,13 @@ class _TodoViewState extends State<TodoView> {
                                                 child: Text(
                                                     entries[index].comment,
                                                     overflow:
-                                                        TextOverflow.ellipsis),
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                ),
                                               ),
                                         children: [
-                                          Text(entries[index].comment),
+                                          //Text(entries[index].comment),
+                                          Container(child: MarkdownBody(data: entries[index].comment)),
                                           entries[index].imageurl != ''
                                               ? fireStoreImage(_getImage(
                                                   entries[index].imageurl))

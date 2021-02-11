@@ -28,10 +28,13 @@ class _AddTodoState extends State<AddTodo> {
   String text = '';
   bool hasFocus;
   FocusNode titleFocusNode;
+  FocusNode commentFocusNode;
 
   File _imageFile;
   String uploadurl;
-  bool isUploading=false;
+  bool isUploading = false;
+  bool typingComment = false;
+
   ///NOTE: Only supported on Android & iOS
   ///Needs image_picker plugin {https://pub.dev/packages/image_picker}
   final picker = ImagePicker();
@@ -43,6 +46,8 @@ class _AddTodoState extends State<AddTodo> {
     todoController.dispose();
     commentController.dispose();
     titleFocusNode.dispose();
+    commentFocusNode.dispose();
+
     super.dispose();
   }
 
@@ -56,24 +61,32 @@ class _AddTodoState extends State<AddTodo> {
         .collection('todos');
     todoController.addListener(updateQuery);
     titleFocusNode = new FocusNode();
+    commentFocusNode = new FocusNode();
+    commentFocusNode.addListener(focusChanged);
+  }
+
+  void focusChanged() {
+    setState(() {
+      this.typingComment = commentFocusNode.hasFocus;
+    });
   }
 
   Future<void> uploadImage() async {
     String filePath = _imageFile.path;
     try {
       setState(() {
-        isUploading=true;
+        isUploading = true;
       });
       await firebase_storage.FirebaseStorage.instance
           .ref(baseName(_imageFile.path))
           .putFile(_imageFile);
-      uploadurl=baseName(_imageFile.path);
+      uploadurl = baseName(_imageFile.path);
       setState(() {
-        isUploading=true;
+        isUploading = true;
       });
     } catch (e) {
       setState(() {
-        isUploading=false;
+        isUploading = false;
       });
       // e.g, e.code == 'canceled'
     }
@@ -93,7 +106,6 @@ class _AddTodoState extends State<AddTodo> {
     setState(() {
       _imageFile = File(pickedFile.path);
     });
-
   }
 
   String baseName(String path) {
@@ -116,25 +128,22 @@ class _AddTodoState extends State<AddTodo> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Container(
-              margin: EdgeInsets.all(8.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: TextField(
-                        decoration: InputDecoration(labelText: 'Title'),
-                        focusNode: titleFocusNode,
-                        controller: todoController),
+            typingComment
+                ? Container()
+                : Container(
+                    margin: EdgeInsets.only(left: 4, right: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                              decoration: InputDecoration(labelText: 'Title'),
+                              focusNode: titleFocusNode,
+                              controller: todoController),
+                        ),
+                      ],
+                    ),
                   ),
-                  FlatButton(
-                      onPressed: () => confirmTitle(),
-                      child: success == AddingTodo.LOADING
-                          ? CircularProgressIndicator()
-                          : Icon(Icons.check, color: Colors.green)),
-                ],
-              ),
-            ),
             Expanded(
               child: Stack(
                 children: [
@@ -143,7 +152,9 @@ class _AddTodoState extends State<AddTodo> {
                     padding: EdgeInsets.only(bottom: 50),
                     child: TextField(
                       keyboardType: TextInputType.multiline,
-                      maxLines: 99,
+                      focusNode: commentFocusNode,
+                      expands: true,
+                      maxLines: null,
                       decoration: InputDecoration(
                         labelText: 'Comment',
                         border: OutlineInputBorder(),
@@ -151,7 +162,7 @@ class _AddTodoState extends State<AddTodo> {
                       controller: commentController,
                     ),
                   ),
-                  titleFocusNode.hasFocus
+                  titleFocusNode.hasFocus | commentFocusNode.hasFocus
                       ? StreamBuilder(
                           stream: todoCollection.snapshots(),
                           builder: (BuildContext context,
@@ -192,20 +203,32 @@ class _AddTodoState extends State<AddTodo> {
                 ],
               ),
             ),
-            _imageFile != null
+            commentFocusNode.hasFocus
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      confirmCommentButton(),
+                    ],
+                  )
+                : Container(),
+            commentFocusNode.hasFocus?Container():_imageFile != null
                 ? Expanded(child: Image.file(_imageFile))
                 : Container(),
-            RaisedButton(
-              onPressed:
-                  this.todoController.text.length < 1 || isUploading? null : () => addTodo(),
-              child: Text(
-                'Add Hobbit',
-                style: TextStyle(color: Colors.white),
-              ),
-              color: this.todoController.text.length < 1
-                  ? Colors.redAccent
-                  : Colors.green,
-            )
+            commentFocusNode.hasFocus
+                ? Container()
+                : RaisedButton(
+                    onPressed:
+                        this.todoController.text.length < 1 || isUploading
+                            ? null
+                            : () => addTodo(),
+                    child: Text(
+                      'Add Hobbit',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    color: this.todoController.text.length < 1
+                        ? Colors.redAccent
+                        : Colors.green,
+                  )
           ],
         ),
       ),
@@ -216,11 +239,15 @@ class _AddTodoState extends State<AddTodo> {
     this.titleFocusNode.unfocus();
   }
 
+  confirmComment() {
+    this.commentFocusNode.unfocus();
+  }
+
   addTodo() async {
     setState(() {
       success = AddingTodo.LOADING;
     });
-    if(_imageFile!=null){
+    if (_imageFile != null) {
       await uploadImage();
     }
     this
@@ -232,7 +259,7 @@ class _AddTodoState extends State<AddTodo> {
         'comment': this.commentController.text.length > 0
             ? this.commentController.text
             : '',
-        'image': this.uploadurl!=null?uploadurl:''
+        'image': this.uploadurl != null ? uploadurl : ''
       }).then((value) {
         setState(() {
           success = AddingTodo.SUCCESS;
@@ -244,5 +271,23 @@ class _AddTodoState extends State<AddTodo> {
         });
       });
     });
+  }
+
+  Widget confirmTitleButton() {
+    return FlatButton(
+        onPressed: () => confirmTitle(),
+        child: success == AddingTodo.LOADING
+            ? CircularProgressIndicator()
+            : Icon(Icons.check, color: Colors.green));
+  }
+
+  Widget confirmCommentButton() {
+    return FlatButton(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18.0),
+            side: BorderSide(color: Colors.green, width: 3)),
+        color: Colors.white,
+        onPressed: () => confirmComment(),
+        child: Icon(Icons.check, color: Colors.green));
   }
 }

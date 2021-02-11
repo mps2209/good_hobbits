@@ -64,27 +64,29 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: toggleObscureText)
                   ],
                 ),
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  child: RaisedButton(
+                    onPressed: logIn,
+                    child: Text("Skip"),
+                  ),
+                ),
 
                 Container(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        margin: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(8.0),
                         child: RaisedButton(
                           onPressed: register,
                           child: Text("Register"),
                         ),
                       ),
+
                       Container(
-                        margin: const EdgeInsets.all(8.0),
-                        child: RaisedButton(
-                          onPressed: logIn,
-                          child: Text("Skip"),
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(8.0),
                         child: RaisedButton(
                           onPressed: emailLogin,
                           child: Text("Login"),
@@ -108,10 +110,17 @@ class _LoginPageState extends State<LoginPage> {
 
   void emailLogin() {
     auth.signInWithEmailAndPassword(
-        email: emailController.text, password: passwordController.text);
+        email: emailController.text, password: passwordController.text).then(
+        (result){
+          if(result!=null){
+            Navigator.of(context)
+                .pushReplacement(MaterialPageRoute(builder: (context) => TodoList()));
+          }
 
-    Navigator.of(context)
-        .pushReplacement(MaterialPageRoute(builder: (context) => TodoList()));
+        }
+    );
+
+
   }
 
   void register() {
